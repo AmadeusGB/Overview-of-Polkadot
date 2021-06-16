@@ -1,4 +1,4 @@
-# Overview-of-Polkadot
+# Overview of Polkadot and its Design Considerations
 - [1 Introduction](https://github.com/AmadeusGB/Overview-of-Polkadot/blob/main/book/Introduction.md)
 - [2 Synopsis](https://github.com/AmadeusGB/Overview-of-Polkadot/blob/main/book/Security_model.md)
   - [2.1 Security model](https://github.com/AmadeusGB/Overview-of-Polkadot/blob/main/book/Security_model.md)
