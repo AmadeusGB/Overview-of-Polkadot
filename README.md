@@ -29,7 +29,7 @@
     - [Account keys](https://github.com/AmadeusGB/Overview-of-Polkadot/blob/main/book/Account_keys.md)
     - [Session keys](https://github.com/AmadeusGB/Overview-of-Polkadot/blob/main/book/Session_keys.md)
   - [Networking](https://github.com/AmadeusGB/Overview-of-Polkadot/blob/main/book/Networking_overview.md)
-    - [Networking_overview](https://github.com/AmadeusGB/Overview-of-Polkadot/blob/main/book/Networking_overview.md)
+    - [Networking overview](https://github.com/AmadeusGB/Overview-of-Polkadot/blob/main/book/Networking_overview.md)
     - [Gossiping](https://github.com/AmadeusGB/Overview-of-Polkadot/blob/main/book/Gossiping.md)
     - [Distributed service](https://github.com/AmadeusGB/Overview-of-Polkadot/blob/main/book/Distributed_service.md)
     - [Storage and availability](https://github.com/AmadeusGB/Overview-of-Polkadot/blob/main/book/Storage_and_availability.md)
