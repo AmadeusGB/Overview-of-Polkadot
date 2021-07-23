@@ -6,7 +6,7 @@
   
 <p align="center">译者：郭斌(amadeusgb123@gmail.com)</p>
 <p align="center">路路(xx@gmail.com)</p>  
-<p align="center">Fate Wang(xx@gmail.com)</p>  
+<p align="center">Faye Wang(xx@gmail.com)</p>  
 
 
 ## <p align="center">摘 要</p>  
