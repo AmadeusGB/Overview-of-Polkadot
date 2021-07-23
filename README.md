@@ -1,5 +1,15 @@
-# Polkadot概述及其设计方案
-## 摘要
+# <p align="center">Polkadot概述及其设计方案</p>  
+<p align="center">Jeff Burdges<sup>1</sup>, Alfonson Cevallos<sup>1</sup>, Peter Czaban<sup>1</sup>, Rob Habermeier<sup>2</sup></p> <p align="center">Syed Hosseini<sup>1</sup>, Fabio Lama<sup>1</sup>, Handan Kılın¸ c Alper<sup>1</sup></p><p align="center">Ximin Luo<sup>1</sup>, Fatemeh Shirazi<sup>1</sup>, Alistair Stewart<sup>1</sup>, Gavin Wood<sup>1,2</sup></p>  
+<p align="center"><sup>1</sup>Web3 Foundation,</p>  
+<p align="center"><sup>2</sup>Parity Technologies</p>  
+<p align="center">June 1, 2020</p>  
+  
+<p align="center">译者：郭斌(amadeusgb123@gmail.com)</p>
+<p align="center">路路(xx@gmail.com)</p>  
+<p align="center">Fate Wang(xx@gmail.com)</p>  
+
+
+## <p align="center">摘 要</p>  
 &emsp;&emsp;在本文中，我们描述了异构多链协议 Polkadot 的设计组件，并解释了这些组件如何帮助Polkadot解决区块链技术的一些现有缺点。目前，已经引入和使用的很多区块链项目，可能在设计时未考虑相互协作的能力。这导致用户难以在不同的区块链之间使用大量交互的应用程序。此外，随着项目数量的增加，每个项目单独提供的安全性变得越来越弱。Polkadot旨在为多条链提供一个可扩展且可互操作的框架，该框架具有池化安全性，这是通过本文中描述的组件集合实现的。
 
 
