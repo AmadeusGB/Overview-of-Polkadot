@@ -1,12 +1,12 @@
-## 4.2 中继链状态机
+## 4.2 中继链状态机  
 &emsp;&emsp;从形式上看，Polkadot 是一个可复制的分片状态机，其中分片是平行链，而 Polkadot中继链是协议的一部分，它确保所有平行链之间的全局共识。因此，Polkadot中继链协议本身可以被视为一个可复制的状态机。在这个意义上，本节通过指定管理中继链的状态机来描述中继链协议。为此，我们说明了中继链状态，以及由中继链块中的交易分组所支配的状态转换的细节。  
 &emsp;&emsp;**状态**：状态是通过使用一个关联数组数据结构来表示的，该结构由（key，value）对的集合组成，每个键都是唯一的。除了key和value都必须是有限字节数之外，对key的格式和存储在key中的value没有任何前提限定。  
-&emsp;&emsp;构成中继链状态的(key, value)对排列在 Merkle radix-16树中,这棵树的根可以有效识别中继链的当前状态。Merkle树还提供了一种有效的方法来产生状态中单个配对的包含证明。  
+&emsp;&emsp;构成中继链状态的(key, value)对排列在Merkle radix-16树中,这棵树的根可以有效识别中继链的当前状态。Merkle树还提供了一种有效的方法来产生状态中单个配对的包含证明。  
 &emsp;&emsp;为了控制状态大小，中继链状态仅用于促进中继链操作，比如质押和识别验证人。Merkle Radix树不会存储有关平行链内部操作的任何信息。  
-&emsp;&emsp;**状态转换**：像任何基于交易的转换系统，Polkadot的状态变化是通过执行有序的指令集，即所谓的extrinsics。这些extrinsics包括由公众提交的事务。它们涵盖了从机器状态的 "外部 "提供的任何数据，可以影响状态转换。Polkadot中继链分为两个主要部分，即 "Runtime "和 "Runtime执行环境"。状态转换功能的执行逻辑主要封装在 "Runtime "中，而所有其他的通用操作，通常在现代基于区块链的复制状态机中共享，被嵌入到 "Runtime执行环境 "中。特别是，后者负责网络通信、区块生产和共识引擎。  
+&emsp;&emsp;**状态转换**：像任何基于交易的转换系统，Polkadot的状态变化是通过执行有序的指令集，即所谓的extrinsics。这些extrinsics包括由公众提交的事务。它们涵盖了从机器状态的"外部"提供的任何数据，可以影响状态转换。Polkadot中继链分为两个主要部分，即"Runtime"和"Runtime执行环境"。状态转换功能的执行逻辑主要封装在"Runtime "中，而所有其他的通用操作，通常在现代基于区块链的复制状态机中共享，被嵌入到"Runtime执行环境"中。特别是，后者负责网络通信、区块生产和共识引擎。  
 &emsp;&emsp;Runtime 函数被编译成一个 WebAssembly 模块，并作为状态的一部分存储。 Runtime执行环境将外部信息传递给 Runtime 并与其交互以执行状态转换。通过这种方式，状态转换逻辑自身就可以作为状态转换的一部分进行升级。  
-&emsp;&emsp;**Extrinsics**：Extrinsics 是提供给 Polkadot 中继链状态机以使其转换到新状态的输入数据。 Extrinsics 需要被存储到中继链块中，以便在状态机之间实现共识。 Extrinsics 分为两大类，即：交易和“inherents”，它们代表中继链块固有的数据。区块的时间戳t 即为一个必须包含在每个Polkadot中继链块中的固有extrinsics示例。  
-&emsp;&emsp;交易被签名并在节点之间的网络上被广播。相比之下，inherents不会被签名，也不会被单独广播，除非它们被包含在了一个区块中。如果绝大多数验证人都认为这个inherents是有效的，那么一个区块中的inherents也会被假定为有效。中继链上的交易主要涉及中继链和 Polkadot 协议的整体操作，例如set code, transfer, bond, validate, nominate,vote等操作码。  
+&emsp;&emsp;**Extrinsics**：Extrinsics是提供给Polkadot中继链状态机以使其转换到新状态的输入数据。Extrinsics需要被存储到中继链块中，以便在状态机之间实现共识。Extrinsics分为两大类，即：交易和“inherents”，它们代表中继链块固有的数据。区块的时间戳t即为一个必须包含在每个Polkadot中继链块中的固有extrinsics示例。  
+&emsp;&emsp;交易被签名并在节点之间的网络上被广播。相比之下，inherents不会被签名，也不会被单独广播，除非它们被包含在了一个区块中。如果绝大多数验证人都认为这个inherents是有效的，那么一个区块中的inherents也会被假定为有效。中继链上的交易主要涉及中继链和Polkadot协议的整体操作，例如set code, transfer, bond, validate, nominate,vote等操作码。  
 &emsp;&emsp;中继区块生产者监听网络上所有交易消息,收到交易信息后，Runtime验证其有效性，然后有效的交易会根据其优先级和从属性被排列在队列中，并相应地被考虑包含进未来的区块中。  
 &emsp;&emsp;**中继链区块格式**：一个典型的中继区块由header和body组成。body由一系列extrinsics组成。  
 &emsp;&emsp;header包含父块的哈希值、块号、状态树的根、Merkle树的根（通过将extrinsics排列在merkle树中获得）以及摘要。摘要会存储来自共识引擎的辅助信息，这些信息将用来验证区块的有效性以及区块的来源，同时帮助轻客户端在无需访问状态存储的情况下验证区块。  
