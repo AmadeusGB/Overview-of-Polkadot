@@ -11,12 +11,12 @@
 ## <p align="center">译者序</p>  
 &emsp;&emsp;本文是波卡技术论文，包括核心技术设计：混合共识GRANDPA/BABE、中继链状态机、经济模型、治理模式、XCMP/SPREE等内容。本文对于全面深入理解Polkadot具有较大的价值，适合具有一定区块链基础的读者阅读。针对波卡技术的设计思路，可进一步参考[Polkadot Wiki](https://wiki.polkadot.network/docs/learn-launch)；如果想要更深入了解设计背后的代码逻辑，可参考[Polkadot github](https://github.com/paritytech/polkadot/)进一步研究。  
 &emsp;&emsp;本文第1章、第2.1节、第4.3.2-4.6.2节由郭斌翻译；第2.2-2.3节、第4.6.3-4.8.7节、第5章、附录A.3、词汇表B由王飞凤翻译；第3章、第4.1-4.3.1节、附录A.1-A.2由冯路翻译；郭斌负责全文统稿及图片重制。  
-&emsp;&emsp;最后，感谢Web3 基金会、Parity亚洲团队的支持，特别感谢Jimmy Chu对具体翻译工作：专业名词解释、专业内容表达的建议和支持，感谢Helena、Qinwen Wang对本文翻译工作筹建的建议和支持。  
+&emsp;&emsp;最后，感谢Web3 基金会、Parity亚洲团队的支持，特别感谢Jimmy Chu对具体翻译工作：专业名词解释、专业内容表达的建议和支持，感谢Helena Wang、Qinwen Wang对本文翻译工作筹建的建议和支持。  
 
 ## <p align="center">Translator's Preface</p> 
 &emsp;&emsp;This paper is a technical paper on Polkadot, including the core technical design: hybrid consensus GRANDPA/BABE, relay chain state machine, economic model, governance model, XCMP/SPREE, etc. This paper is of great value for a comprehensive and in-depth understanding of Polkadot, and is suitable for readers with certain blockchain foundation. For the design ideas of Polkadot technology, you can further refer to [Polkadot Wiki](https://wiki.polkadot.network/docs/learn-launch); if you want to understand the code logic behind the design more deeply, you can refer to [Polkadot github](https://github.com/paritytech/polkadot/) for further research.  
 &emsp;&emsp;Chapter 1, Section 2.1, and Section 4.3.2-4.6.2 are translated by Bin Guo; Sections 2.2-2.3, 4.6.3-4.8.7, Chapter 5, Appendix A.3, and Glossary B are translated by Feifeng Wang; Chapter 3, Sections 4.1-4.3.1, and Appendix A.1-A.2 are translated by Lu Feng; Bin Guo is responsible for the full-text unification and image reproduction.  
-&emsp;&emsp;Finally, we would like to thank Web3 Foundation and Parity Asia team for their support, especially Jimmy Chu for his suggestions and support on specific translation work: explanation of professional terms and expression of professional contents, and Helena and Qinwen Wang for their suggestions and support on the preparation of translation work of this paper.  
+&emsp;&emsp;Finally, we would like to thank Web3 Foundation and Parity Asia team for their support, especially Jimmy Chu for his suggestions and support on specific translation work: explanation of professional terms and expression of professional contents, and Helena Wang and Qinwen Wang for their suggestions and support on the preparation of translation work of this paper.  
 
 ## <p align="center">摘 要</p>  
 &emsp;&emsp;在本文中，我们描述了异构多链协议Polkadot的设计组件，并解释了这些组件如何帮助Polkadot解决区块链技术的一些现有缺点。目前，现有的很多不同功能的区块链项目，可能在设计时未考虑相互协作的能力。这导致用户难以在不同的区块链之间使用大量交互的应用程序。此外，随着项目数量的增加，每个项目单独提供的安全性变得越来越弱。Polkadot旨在为多条链提供一个可扩展且可互操作的框架，该框架具有池化安全性，这是通过本文中描述的组件集合实现的。
