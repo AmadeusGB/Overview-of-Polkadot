@@ -6,7 +6,7 @@
   
 <p align="center">译者：郭斌(波卡高级大使，amadeusgb123@gmail.com)</p>
 <p align="center">路路(波卡高级大使，xx@gmail.com)</p>  
-<p align="center">Faye Wang(波卡初级大使，xx@gmail.com)</p>  
+<p align="center">Faye Wang(波卡初级大使，fayewang4@gmail.com)</p>  
 
 ## <p align="center">译者序</p>  
 &emsp;&emsp;本文是波卡技术论文，包括核心技术设计：混合共识GRANDPA/BABE、中继链状态机、经济模型、治理模式、XCMP/SPREE等内容。本文对于全面深入理解Polkadot具有较大的价值，适合具有一定区块链基础的读者阅读。针对波卡技术的设计思路，可进一步参考[Polkadot Wiki](https://wiki.polkadot.network/docs/learn-launch)；如果想要更深入了解设计背后的代码逻辑，可参考[Polkadot github](https://github.com/paritytech/polkadot/)进一步研究。  
