@@ -314,3 +314,194 @@
 &emsp;&emsp;1. 来自验证人通过挖矿获得的部分奖励  
 &emsp;&emsp;2. 来自验证人削减费用和部分网络交易费  
 &emsp;&emsp;第一种方法允许我们保持固定的通货膨胀率，同时将验证人奖励与质押水平挂钩（参见第4.5.1节）：在每个era，预铸Token和验证人的奖励之间的差额会被分配给国库。我们也认为将所有的削减的一部分转交国库是方便的：跟踪发生大量削减的事件，系统可能需要额外的资金来进行软件更新开发或新基础设施用以解决现有问题，或者可能通过治理来决定偿还部分被削减的质押。因此，被削减的DOTs存在国库是有意义的，而不是销毁后又立刻铸造更多的DoTs。  
+## 4.7 密码学   
+&emsp;&emsp;在Polkadot中，我们需要通过不同的密钥和密钥类型区分不同的权限和功能。我们粗略地将这些分类为用户交互的帐户密钥，和管理节点的会话密钥。会话密钥确定了在节点管理中，除了认证过程外，不会有操作员干预。  
+### 4.7.1 账户密钥   
+&emsp;&emsp;账户密钥有一个相关联的余额，其中部分可以被锁仓，以便在质押、资源租赁以及治理中发挥作用，包括等待几种时间类型的解锁期。由于这些角色施加的限制不同，且多个解锁期是同时运行的。所以，我们允许不同锁仓活动采用不同的锁仓时间。  
+&emsp;&emsp;我们鼓励大家积极参与所有这些角色，但首先参与这些角色不可避免地偶尔需要账户签名。同时，如果将账户密钥保存在不太方便的地方会更具有物理方面的相对优势，比如保存在保险箱，但同时这也使签名就变得非常不便。为了避免这样的摩擦，我们提出了以下解决方案。  
+&emsp;&emsp;为质押而锁定资金的账户称为stash账户。所有stash帐户都需要注册链上证书，将所有验证人运行和提名的权利委派给某些控制人账户。同时，也选定一些代理密钥进行治理投票。在这种状态下，控制人账户和代理账户可以分别在质押和治理功能中为 stash 账户签名，但不能进行资金交易。  
+&emsp;&emsp;目前，账户密钥方面，我们支持 ed25519 [6]和Schnorrkel/sr25519[9]两种规格。两者都是使用Ed25519曲线的类似Schnorr的签名，因此两者的安全级别相近。对于需要硬件安全模块（HSM）支持或其他外币密钥管理方法的用户，我们推荐使用ed25519。另一方面， Schnorrkel/sr25519 提供更多区块链友好功能，如分层确定性密钥派生 (HDKD)和多重签名。  
+&emsp;&emsp;特别是，Schnorrkel/sr25519采用Mike Hamburg的Decaf[18, §7]的Ristretto压缩算法[21]，Ristretto压缩算法提供Ed25519曲线的2个无扭点作为质数群。避免此类辅引子表明Ristretto使在实现复杂化协议时更加安全。Polkadot中大部分常规哈希都采用Blake2b算法，但是Schnorrkel/sr25519本身使用STROBE128 [19]，是基于Keccak-f(1600)并提供非常适用于签名和非交互式零知识证明（NIZK）的哈希接口。  
+### 4.7.2 会话密钥   
+&emsp;&emsp;每个会话密钥在共识或安全方面扮演一个特定的角色。通常，会话密钥获得仅来自会话许可的授权，由代表一定质押量的某些控制人密钥签字。  
+&emsp;&emsp;任何时候，控制人密钥都可以暂停或撤销此会话许可，以及可以选择是否更换新的会话密钥。所有新的会话密钥都可以提前注册，而且大多数必须提前注册，便于验证人通过发放只在未来某个会话之后有效的会话许可，使其干净利落地过渡到新硬件。我们建议使用暂停机制进行紧急维护，并在会话密钥可能被泄露时使用撤销机制。  
+&emsp;&emsp;我们更倾向于会话密钥能够绑定到一台物理设备，以最大程度地减少意外风险的发生。我们要求验证器和操作员通过RPC协议发起会话许可，而不是通过会话密钥本身去操作。  
+&emsp;&emsp;几乎所有早期的POS网络在公钥基础设施上都有疏忽，间接的鼓励了跨设备复制会话密钥，从而降低了安全性并导致无意义的罚款。  
+&emsp;&emsp;我们对具体的组件或其关联会话密钥类型⁶并不进行在加密密码学方面的预先限制。  
+&emsp;&emsp;在BABE 4.3.1中，验证人使用Schnorrkel/sr25519密钥作为常规Schnorr 签名，也可以用于基于NSEC5[28]的可验证随机函数(VRF)。   
+&emsp;&emsp;VRF是伪随机函数(PRF)的公钥模拟，又名具有可分辨密钥功能的加密哈希函数，例如许多MAC。当区块生产者VRF输出VRFsk (rℯ‖slot number)的得分足够低，那么，任何拥有VRF公钥的人可以验证区块是否在正确的slot中产生，但只有区块生产者才能通过他们的VRF密钥提前知道他们的插槽。  
+&emsp;&emsp;如[15]描述，我们为VRF输入提供一系列随机性rℯ，通过哈希所有VRF输出形成前一个会话，这就要求BABE密钥至少在使用之前的两个完整epoch完成注册。  
+&emsp;&emsp;我们通过对输入端签名者的公钥进行哈希以降低VRF输出的延展性，与HDKD一起使用时，可显着提高安全性。当输出端在其他地方使用是，我们对VRF的输入和输出信息都进行哈希，提高了其作为安全证明随机预言机使用时的可组合性。相关Theorem 2 2Hash-DH构造内容，请参阅第32页附件C [15]。  
+&emsp;&emsp;在GRANDPA 4.3.2中，验证人应使用BLS签名进行投票，支持方便签名聚合并选择ZCash BLS12-381曲线以获得性能。这里存在的风险是由于数阈筛选法的进步，BLS12-381的安全性可能会大大低于128位。如果发生这种情况，我们预计将GRANDPA升级到另一条曲线来解决问题。  
+&emsp;&emsp;我们也将libp2p的传输密钥大致视为会话密钥，但它们不单单是给验证人本身使用，也包括传输哨兵节点的密钥。因此，操作者需要更多和它产生交互。  
+## 4.8 网络   
+&emsp;&emsp;在前面的部分中，我们讨论了节点将数据发送到另一个节点或其他节点组合，但没有具体说明这是如何实现的。我们这样做是为了简化模型并能够清楚地界定不同层之间的核心关注点。  
+&emsp;&emsp;当然，在真正的去中心化系统世界中，网络部分也必须是去中心化的——虽然网络上运行的高级协议是去中心化的，但是如果所有的通信都通过几个中央服务器，这显然不是好方案。举一个具体的例子：在某个安全模型中，包括传统的拜占庭容错设置，节点的建模可能是恶意的，但是缺少相关恶意的具体评估定义。一个安全模型要求必需有>1/3的节点是诚实的。即当诚实节点>1/3的时候，所有节点都可以随时实时地的相互信任的交流。然而，如果边界实际上被恶意的ISP控制，那么模型下的任何分析都会认为其相应的节点是恶意的。更重要的是，即使实际上中心化力量对众多节点没有任意执行权，但是如果底层通信网络是中心化的，就赋予了中心化的各方有能力破坏模型中>1/3的节点，并进一步破坏这个网络的安全假设。  
+&emsp;&emsp;在本节中，我们概述并列举了我们在Polkadot中需要的通信原语，并勾勒出关于我们如何以去中心化的方式实现这些高级设计，同时随着我们不断对量产系统的推进，更多的细节将得到完善。  
+### 4.8.1 网络概况   
+&emsp;&emsp;如上所述，Polkadot 由一个独特的中继链与许多不同的平行链组成，同时中继链为平行链提供安全服务。为此，需要满足以下网络级别功能，大致分为以下方面：  
+&emsp;&emsp;1.	与所有区块链协议一样，中继链需要满足以下功能要求：  
+&emsp;&emsp;&emsp;a)	接受并分发来自用户的交易和其他外部的数据（统称为外部数据或外部源）  
+&emsp;&emsp;&emsp;b)	分发收集子协议的工件4.2  
+&emsp;&emsp;&emsp;c)	分发终态子协议的工件4.3.2  
+&emsp;&emsp;&emsp;d)	同步先前完成的状态  
+&emsp;&emsp;作为一个重要的示例，平行链可以根据上述结构自行选择执行与否，甚至可能重新使用相同的子协议。波卡的部分实现被构建成了一个单独的程序库，称为“Substrate”，专门进行基础框架构建。  
+&emsp;&emsp;2.	关于中继链和平行链交互，需要：  
+&emsp;&emsp;&emsp;a)	接受来自平行链收集人产生的平行链区块  
+&emsp;&emsp;&emsp;b)	分发包含有效性证明的平行链区块元数据  
+&emsp;&emsp;&emsp;c)	分发平行链区块数据并使其一段时间内可用(见4.4.2)，以完成审计  
+&emsp;&emsp;3.	关于平行链间的交互，需要：  
+&emsp;&emsp;&emsp;a)	在平行链之间分发消息(见4.4.3)，特别是从相关发件人到相关收件人的消息(见4.4.3)。  
+&emsp;&emsp;对于上述每个功能要求，我们通过以下方式进行满足：  
+&emsp;&emsp;&emsp;1(b), 1(c), 2(b) – 工件通过Gossip进行原样广播（即无需进一步编码）  
+&emsp;&emsp;&emsp;1(a), 1(d), 2(a) - 实际上，一组节点向客户端提供相同的分布式服务。为了接受外部信息或区块，客户端将它们直接发送到服务节点；为了同步，客户端直接从服务节点接收可验证的数据。  
+&emsp;&emsp;&emsp;2(c) - 特殊情况，如下。简而言之，数据将被擦除编码，以便不同的接收者接收到一个小的数据大小/接收到一小部分数据；碎片信息直接接通过QUIC发送。  
+&emsp;&emsp;&emsp;3(a) - 特殊情况，如下。简而言之，消息直接通过QUIC发送；在这个过程中，发件箱被重新组合成收件箱，随后又可以批量传输给收件人。  
+&emsp;&emsp;我们将在接下来的几节中更详细地介绍这些内容。最后，再分享一下支持所有子协议的底层技术，即身份验证、传输和发现相关内容。  
+### 4.8.2 Gossiping     
+&emsp;&emsp;该子协议用于大多数中继链工件，通过此展示每个人或多或少需要看到相同的公开信息。它的部分结构也用于当节点离线一长段时间后需要同步以前未接收的任何新数据。  
+&emsp;&emsp;Polkadot中继链网络在物理通信网络之上形成Gossip覆盖网络，作为去中心化广播媒体的有效方式。网络由已知数量的通过质押而受信任的节点（验证人），和来自未经许可的开放网络中的未知数量的不受信任节点（不执行验证的全节点）组成。（备注：一些不受信任的节点可能承担其他角色，例如平行链收集人、钓鱼人等）  
+&emsp;&emsp;目前实现了一种简单的基于推送型的方法，采用基于哈希的跟踪器缓存，以避免向对等节点发送重复信息，并采取一些限制，以避免最常见的垃圾邮件攻击：  
+&emsp;&emsp;&emsp;工件只能按依存顺序接收；不允许对等节点乱序发送。尽管这会降低网络级的效率，但实施起来相对简单并能够提供可靠的安全性。  
+&emsp;&emsp;&emsp;为有效地与发送方进行通信，明确发送方可以发送的信息顺序，peers会定期根据链的最新信息更新对方。同时，验证人和收集人节点定期对中继链的最新头块信息进行更新通信。  
+&emsp;&emsp;关于使用Gossip协议的各类高级子协议的工件还需要满足更多具体的约束规则，以避免广播延误或进行不必要的工件。例如，对于GRANDPA，对于各类型的投票，我们只允许每种类型的投票、轮数和选举人，只能获得两票，其他追加投票将被忽略。并且，仅允许有效验证的区块生产者对每一轮生产一个区块，其他追加的区块生产都将被忽略。  
+&emsp;&emsp;作为对哨兵节点的基本支持，本质上只有代理服务器与私人服务器邻近，进行最重要的安全相关的运行，如验证人角色。  
+&emsp;&emsp;网络拓扑是目前的一个薄弱点；节点通过执行随机查找的方式来实现以ad-hoc为基础的方式相互连接，通过地址簿执行随机查找。进一步的工作将沿着以下两个方向展开：  
+&emsp;&emsp;&emsp;1.	受信任的节点将保留其部分带宽和连接资源，形成一个结构化叠加层，即具有确定性，又满足根据不同era转换的不可预测性。对于在哨兵背后运行的节点，通过代表这些节点的哨兵节点参与这个拓扑结构。  
+&emsp;&emsp;&emsp;2.	对于剩余的可信节点的资源容量，以及对于整个不可信节点的资源容量，将通过基于延迟测量的方案进行组合，细节有待进一步商榷。值得注意的是，为了获得良好的安全属性，我们需要方案的设计不是简单基于“最近优先”，也会对远处节点进行组合。  
+&emsp;&emsp;从某种意义上说，这可以看作是受信任节点和其周围的不受信任节点形成了一个核心。但需要注意的是，受信任的节点会使用它们的一些资源来服务不受信任的节点。选择这两种拓扑形式有利于来缓解日蚀攻击，以及公链不受信任下的女巫攻击。  
+&emsp;&emsp;我们还在协调协议设置方面展开进一步工作，进一步减少由于许多发件人尝试将同一内容同时发送给同一收件人而造成的冗余；此外，也会考虑在保持安全性的同时取消排序限制。  
+### 4.8.3 分发服务    
+&emsp;&emsp;当 Polkadot 的某些部分向某个外部实体提供服务时，也将使用此子协议。即1(a)接受中继链的交易，1(d)同步中继链的状态，以及2(a)对接受上述列表中被校对过的区块。  
+&emsp;&emsp;在最初的实现中，仅在地址簿中查找一个特定的目标集，从这个目标集中选取几个节点，并连接到他们。对于1(a)和1(d)目标集是整个验证人集合，对于2(a)目标集是平行链验证人集合，它们进行平行链客户端的校对。这两个都可以直接进行链上状态检索，实际上对于1(a)来说，这与加入gossip网络的过程相同。  
+&emsp;&emsp;我们将在接下来的工作中进一步考虑传输层连接整个目标集的负载均衡问题，以及确保可用性。这可能需要增加地址簿的复杂性。  
+### 4.8.4 存储和可用性    
+&emsp;&emsp;该子协议解决章节4.4.2中描述的网络可用性和有效性相关话题。  
+&emsp;&emsp;考虑到可扩展性，Polkadot不要求每个人对整体系统的状态进行存储，准确的说，即不需要所有区块都存储网络的全部状态。相反，每个平行链区块通过擦除码被分成几个碎片，这样每个验证人都有一个碎片，总共有N个碎片。出于安全因素考虑，擦除阈值设置为ceil(N/3)。所有碎片信息由指定的收集人提交。且最初都可以在相关的平行链验证人处获得，（在这个角色中，平行链验证人也被称为初检员）然后这些分片信息将根据以下步骤进行分发：  
+&emsp;&emsp;&emsp;1.	分发 - 每个平行链验证人最初都想要其中一个碎片，而平行链验证人也必须按一人一分片的要求进行分发；  
+&emsp;&emsp;&emsp;2.	检索 - 审批检查者（即中继链验证人）需要确认有ceil(N/3) 的验证人有他们的碎片，并且其中部分中继链验证人将尝试进行碎片检索；  
+&emsp;&emsp;&emsp;3.	进一步检索 -作为可选项，其他非验证方也可能想要执行进一步检查，例如响应钓鱼人警报，再次提出ceil(N/3)分片的需求。  
+&emsp;&emsp;这个子协议的目的是确保ceil(N/3)这个阈值可行，以及可以在合理的时间内得到相关验证人中检索，直到至少完成了后面几个阶段的时候。我们将遵循一个类似bittorrent的协议，但有以下区别。  
+&emsp;&emsp;&emsp;- 对于分发和检索，接收者的集合是已知的。因此，除了bittorrent的pull语义之外，碎片可以通过已经拥有碎片的验证人提前推送；  
+&emsp;&emsp;&emsp;- 哨兵节点背后的验证人将使用这些作为节点作为代理，而不是直接发送；  
+&emsp;&emsp;&emsp;- 与中心化的追踪器不同,像谁拥有什么碎片信息这样的追踪,会通过中继链的Gossip网络进行传播。  
+&emsp;&emsp;对于初检员的预期是可以完全或者大部分连接；这也是校对协议的前提要求。审批员也应该完全或大部分连接，以帮助检索过程更快地完成。  
+&emsp;&emsp;除此之外，节点可以按照协议认为合适的方式与任何其他节点进行通信，类似bittorrent。为了防止DoS攻击，他们应该实施类似bittorrent的资源限制，此外节点应该相互验证并且只与其他验证人通信，包括初检员和审批员。后期可选阶段的非验证方会被授予身份验证令牌以达到可以通信的目的。关于负载均衡议题，例如节点在随机选择中如何避免对其他节点的意外覆盖，我们在单独文件中进行详细讨论。  
+&emsp;&emsp;我们认为此部分组建不适合使用结构化叠加拓扑学的原因有以下几点：  
+&emsp;&emsp;&emsp;1.	每个碎片是发送给特定的人员，而不是每一个人  
+&emsp;&emsp;&emsp;2.	(a)想要获得特定数据碎片的人，需要知道从哪里获取 – 例如从验证人，初检员处获得  
+&emsp;&emsp;&emsp;2.  (b)其他想要随机非特定数据的人 – 例如审查员，希望任意1/3的碎片都可以重构  
+&emsp;&emsp;叠加拓扑学的应用场景要求刚好与上述情况完全相反：  
+&emsp;&emsp;&emsp;1.	各数据碎片几乎会发给全员  
+&emsp;&emsp;&emsp;2.	或者，人们需要特定的数据碎片，但不需要知道从哪里获取  
+&emsp;&emsp;例如，bittorrent有类似的要求要求类似但没有采用结构化叠加，它通过需求偏差进行点对点的连接。  
+### 4.8.5 跨链消息    
+&emsp;&emsp;本节内容对XCMP消息传递子协议（章节4.4.3）的相关网络设计进行分析。  
+&emsp;&emsp;简单回顾章节4.4.3内容，平行链之间能够相互发送消息。输出信息内容作为平行链PoV区块的一部分，由发出信息的平行链的收集人发送并递交给相应平行链验证人。并作为可用性协议的一部分分发给其他验证人。中继区块包含各平行链输入信息相对应的输出信息的元数据。因此，XCMP网络的工作就是针对每个接受信息的平行链从其他发件箱中获取其输入消息。  
+&emsp;&emsp;值得一提的是，这一过程可通过A&V协议的擦除码片段检索完成，并不会增加额外复杂性，例如，通过Gossip网络，解码所有潜在发送方的发件箱。但在初期——广播媒介用于两大方面：一、对接收方平行链播报感兴趣的数据进行广播；二、除了对接收方进行播报，也用于对发送给平行链的正在进行检索的数据进行播报。这是非常低效的，所以这被用作在通讯量较低情景下的早期网络初步实现方案。  
+&emsp;&emsp;进一步工作的展开从以下几方面展开，问题之一是如何有效地将所有发件人的发件箱转换为所有收件人的收件箱。这个问题一旦解决，任何收件人可以通过检索收件箱信息来定位以完成信息转换。我们注意到我们的 A&V 网络结构具有非常相似的通信要求 – 也就是，每个平行链区块的分片必须分发给其他每个验证人，反之亦然，每个验证人都必须接收每个平行链区块的分片。因此，我们的工作重心将放在A&V网络协议的扩展能力，以支持XCMP发件箱变成收件箱的转换能力。  
+&emsp;&emsp;另一个需要提及的重要区别是A&V中的分片存在的内置冗余，相比之下XCMP 消息没有内置冗余，且所有信息必须进行全部有效分发。采用擦除码技术也是一个简单明了的解决方案，同时团队也在探索替代方案。  
+### 4.8.6 哨兵节点    
+&emsp;&emsp;有时，网络运营商出于运营安全的考虑，希望对其物理网络的各个方面进行安排。其中一些安排是独立的并且与任何去中心化协议的设计兼容，这些协议通常在上层拓扑结构中工作。然而其他一些配置需要特殊处理分布式协议，特别是影响节点的可获得性的相关配置。  
+&emsp;&emsp;对于此类应用场景，Polkadot支持将全节点作为另一个全节点的哨兵节点运行，且这个全节点只能由这些哨兵节点访问。当为单个私有全节点运行多个哨兵节点时，这个方式最有效方式。简而言之，在协议方面，哨兵节点和其私有节点邻近，并通过结合额外元数据让其他节点和其私有节点沟通。在直接发送模式下，哨兵节点类似TURN服务器，不存在任何资源瓶颈限制，因为每个哨兵节点只服务一个私有节点。这些附加内容相当简单，更多细节可从其他地方获得。  
+&emsp;&emsp;如果您认为上述安全性优势不值得追加潜在成本，也可以不运行哨兵节点。  
+&emsp;&emsp;下面简要讨论基于这种方法下的安全权衡。受限制的物理拓扑的优势之一是，能够在跨多网关代理的情况下，提供负载平衡支持和DoS保护支持。如果软件中存在漏洞，间接还可以帮助保护私有节点 - 但请注意，这并不包括最严重的漏洞，比如一些漏洞在哨兵节点上提供任意执行权限，然后将其作为攻击私有节点的发射台。因此，即使当一个公共地址的服务代码写的很好的时候，我们也不认为它本身具有安全性保障，但哨兵节点可以帮助缓解这些情况，提供更多的安全性保障。  
+&emsp;&emsp;（另一种可能性是网络运营者运行较低级别的代理，例如IP或TCP代理，作为私有节点。这方面没有Polkadot协议的支持也可以完成。对比以上方案，哨兵节点的一个优势是来自作为Polkadot协议的一部分，通过哨兵节点的通讯已经进行了某种程度的验证和净化，较低级别的代理在这方面存在缺失。当然这里也可能存在漏洞，但这些被优先处理，因为它们是对抗整个网络的可用放大矢量）  
+### 4.8.7 授权、传输和发现    
+&emsp;&emsp;一般的安全协议与Polkadot类似，实体通过加密公钥相互关联。弱引用无法提供强安全性关联，例如，IP地址，因为它们通常不是由实体本身控制，而是由它们的通信提供商控制。  
+&emsp;&emsp;然而，为了实现交流，我们需要在实体和其地址之间建立关联。Polkadot使用与许多其他区块链类似的方案，即使用广泛使用的分布式哈希表（DHT），Kademlia[22]。Kademlia是DHT的一种，采用XOR 距离度量，常用于高流失网络。我们采用Protocol Labs的libp2p Kademlia并在执行过程中进行改进来达到使实体和其地址建立关联的目标。为防止日蚀攻击[20]，我们允许路由表足够大以包含最小限度的诚实节点，并且实现多路径路由的S-Kademia执行。  
+&emsp;&emsp;目前，地址簿服务也被用作主要发现机制——节点在加入网络时进行密钥/键(key)空间随机查找，并连接到任何一组返回的地址。同样，节点接受任何传入连接。这便于支持轻量化客户端和其他非特权用户的支持，但也容易造成DoS攻击。  
+&emsp;&emsp;进一步的工作将把发现机制与地址簿进行分离，如gossiping章节介绍到，打造更为安全的网络拓扑，还需要当前受信验证人集合授权部分传输级别的连接。然而，我们还需要保留接受来自未经授权实体的输入连接的能力，这需要在资源基础上进行限制，与受信实体之间保持平衡。  
+&emsp;&emsp;进一步的工作也会将地址簿的实现与其接口解耦，因此，例如，我们可以将一部分放在链上。这与基于Kademlia的地址簿有不同的安全权衡，其中一些不在Polkadot的当前工作范围内，例如位置隐私。通过提供不同的可能性，我们希望通过多样的节点组合来满足不同的安全要求。  
+# 5 远期计划    
+&emsp;&emsp;在未来工作计划中，我们将专注于Polkadot的一系列扩展工作。我们希望添加激励钓鱼人的模型，以确保他们有足够的激励来报告恶意行为。关于免信任消息传递，我们正在进行SPREE A.1的开发以实现信息去信任传递。我们也将致力于进一步提高Polkadot的可扩展性，例如嵌套式中继链的研究。此外，桥接协议A.2也是我们工作计划的一部分，例如进行与比特币、以太坊和Zcash的桥接。此外，为了提高可用性，我们计划启用平行线程，具有与平行链相同的功能，但是租赁时间更短，以及有不同的收费模式。  
+# 致谢   
+&emsp;&emsp;我们要感谢来自Web3基金会的Bill Laboon对本文的反馈，以及Parity Technologies开发人员的有益建议和帮助讨论。  
+# 参考文献  
+[1].	Availability and validity scheme.https://research.web3.foundation/en/latest/polkadot/Availability_and_Validity/.  
+[2].	Blind assignment for blockchain extension(babe).https://research.web3.foundation/en/latest/polkadot/BABE/Babe/.  
+[3].	Visa inc.at a glance,Dec 2015.Accessed:2020-02-25.  
+[4].	Mustafa Al-Bassam,Alberto Sonnino,and Vitalik Buterin.Fraud and data availability proofs:Maximising light client security and scaling blockchains with dishonest majorities.arXiv preprint arXiv:1809.09044, 2018.  
+[5].	Handan Kılın¸c Alper.Consensus on clock in universally composable timing model.Cryptology ePrint Archive,Report 2019/1348, 2019.https://eprint.iacr.org/2019/1348.  
+[6].	Daniel Bernstein, Niels Duif, Tanja Lange, Peter Schwabe, and Bo-Yin Yang.High-speed high-security signatures.Journal of Cryptographic Engineering volume,2012(2):77-89, 2012.  
+[7].	Markus Brill, Rupert Freeman, Svante Janson, and Martin Lackner. Phragm´ ens voting methods and justified representation.In Thirty-First AAAI Conference on Artificial Intelligence,2017.  
+[8].	Ethan Buchman, Jae Kwon, and Zarko Milosevic.The latest gossip on bft consensus.arXiv preprint arXiv:1807.04938,2018.  
+[9].	Jeffrey Burdges.schnorrkel:Schnorr vrfs and signatures on the ristretto group. https://github.com/w3f/schnorrkel,2019.  
+[10].	Vitalik Buterin.Ethereum:A next-generation smart contract and decentralized application platform,2014.Accessed:2016-08-22.  
+[11].	Vitalik Buterin and Virgil Griffith.Casper the friendly finality gadget.arXiv preprint arXiv:1710.09437,2017.  
+[12].	Alfonso Cevallos and Alistair Stewart.Validator election in nominated proof-of-stake.arXiv preprint arXiv:2004.12990,2020.  
+[13].	Tarun Chitra.Competitive equilibria between staking and on-chain lending.arXiv preprint arXiv:2001.00919,2019.  
+[14].	Kyle Croman, Christian Decker, Ittay Eyal, Adem Efe Gencer, Ari Juels, Ahmed Kosba, Andrew Miller, Prateek Saxena, Elaine Shi, Emin Sirer, Dawn Song, and Roger Wattenhofer.On scaling decentralized blockchains.volume 9604, pages 106-125,02 2016.  
+[15].	Bernardo David, Peter Gaˇ zi, Aggelos Kiayias, and Alexander Russell.Ourobor-os Praos: Anadaptively-secure, semi-synchronous proof-of-stake blockchain. In Annual International Conference on the Theory and Applications of Cryptographic Techniques, pages 66-98.Springer,2018.https://eprint.iacr.org/2017/573.  
+[16].	Sascha Fllbrunn and Abdolkarim Sadrieh. Sudden Termination AuctionsAn Experimental Study.Journal of Economics & Management Strategy,21(2):519-540, June 2012.  
+[17].	Juan Garay, Aggelos Kiayias, and Nikos Leonardos.The bitcoin backbone protocol: Analysis and applications. In Annual International Conference on the Theory and Applications of Cryptographic Techniques, pages 281-310. Springer, 2015.  
+[18].	Mike Hamburg. Decaf: Eliminating cofactors through point compression. In Rosario Gennaro and Matthew Robshaw, editors, Advances in Cryptology-CRYPTO 2015, pages 705-723, Berlin, Heidelberg, 2015. Springer Berlin Heidelberg. https://eprint.iacr.org/2015/673.  
+[19].	Mike Hamburg.The STROBE protocol framework.IACR ePrint 2017/003, 2017. https://eprint.iacr.org/2017/003 and https://strobe.sourceforge.io.  
+[20].	Ethan Heilman, Alison Kendler, Aviv Zohar, and Sharon Goldberg.Eclipse attacks on bitcoin’s peer-to-peer network. In 24th USENIX Security Symposium (USENIX Security 15),pages 129–144, Washington, D.C., August 2015. USENIX Association.  
+[21].	Isis Lovecruft and Henry de Valence. Ristretto.https://ristretto.group. Accessed: 2019.  
+[22].	Petar Maymounkov and David Mazi` eres. Kademlia: A peer-to-peer information system based on the xor metric.In Revised Papers from the First International Workshop on Peer-to-Peer Systems, IPTPS ’01, pages 53-65, London, UK, UK, 2002. Springer-Verlag.  
+[23].	Silvio Micali. ALGORAND: the efficient and democratic ledger.CoRR,abs/1607.01341, 2016.  
+[24].	Silvio Micali, Michael Rabin, and Salil Vadhan.Verifiable random functions. In 40th Annual Symposium on Foundations of Computer Science (Cat.No. 99CB37039), pages 120-130.IEEE, 1999.  
+[25].	David Mills et al.Network time protocol.Technical report, RFC 958, M/A-COM Linkabit,1985.  
+[26].	Satoshi Nakamoto.Bitcoin: A peer-to-peer electronic cash system, Dec 2008. Accessed:2015-07-01.  
+[27].	Ryuya Nakamura, Takayuki Jimba, and Dominik Harz.Refinement and verification of cbc casper. Cryptology ePrint Archive, Report 2019/415, 2019. https://eprint.iacr.org/2019/415.  
+[28].	Dimitrios Papadopoulos, Duane Wessels, Shumon Huque, Moni Naor, Jan Vˇ celák, Leonid Reyzin, and Sharon Goldberg. Making NSEC5 practical for dnssec. IACR ePrint Report 2017/099, 2017. https://eprint.iacr.org/2017/099.  
+[29].	Luis Sánchez-Fernández, Edith Elkind, Martin Lackner, Norberto Fernández, Jesús A Fisteus, Pablo Basanta Val, and Piotr Skowron.Proportional justified representation. In Thirty-First AAAI Conference on Artificial Intelligence, 2017.  
+[30].	Luis Sánchez-Fernández, Norberto Fernández, Jesús A Fisteus, and Markus Brill. The maximin support method: An extension of the d’hondt method to approval-based multiwinner elections. arXiv preprint arXiv:1609.05370, 2016.  
+[31].	Elaine Shi. Analysis of deterministic longest-chain protocols. In 2019 IEEE 32nd Computer Security Foundations Symposium (CSF), pages 122-12213. IEEE, 2019.  
+[32].	Alistair Stewart. Byzantine finality gadgets. Technical Report, 2018. https://github.com/w3f/consensus/blob/master/pdf/grandpa.pdf.  
+[33].	Gavin Wood. Polkadot: Vision for a heterogeneous multi-chain framework. White Paper,2016.  
+[34].	Vlad Zamfir. Casper the friendly ghost: A correct-by-construction blockchain consensus protocol.2017.  
+[35].	Alexei Zamyatin, Dominik Harz, Joshua Lind, Panayiotis Panayiotou, Arthur Gervais, and William J. Knottenbelt. XCLAIM: trustless, interoperable, cryptocurrency-backed assets.In 2019 IEEE Symposium on Security and Privacy, SP 2019, San Francisco, CA, USA, May 19-23, 2019, pages 193-210. IEEE, 2019.  
+# 附录A   
+## A.1 SPREE  
+&emsp;&emsp;SPREE（Shared Protected Runtime Execution Enclaves）是一种让平行链拥有共享代码的方式，并且沙盒化代码的执行和状态。从平行链A的角度来看，它能在多大程度上信任平行链 B？Polkadot的共享安全保证了B的代码的正确执行，且保证对B代码的执行安全性与执行A代码的安全性的一样高。然而，如果我们不知道B代码本身（即使知道），B的治理机制也可以改变其代码，而我们不信任这个改变。如果要改变这种情况，我们就需要知道B的部分代码，且对这部分代码不会被B的治理机制左右，那么这部分代码可以向A发送消息，如此便知B代码的正确执行会对这些消息产生怎样的作用，所以共享安全给我们提供了我们需要的保证。  
+&emsp;&emsp;SPREE模块是放置在中继链中的一段代码，平行链可以选择加入。这段代码是该链状态转换验证功能（STVF）的一部分。SPREE模块的执行和状态被沙盒化，与STVF的其他执行分离。远程链上的SPREE模块可以被XCMP寻址。平行链能收到的信息由其SPREE模块决定（这对于想要使用任何SPREE模块的链来说，这是一个内生强制执行）。  
+&emsp;&emsp;我们期望XCMP发送的大多数消息将从一个链上的SPREE模块发送到另一个链上的同一SPREE模块。当SPREE模块被升级时，涉及到将更新的代码上传到中继链，并安排一个更新的区块号，它将在所有平行链的下一个区块上进行更新。这样做是为了保证一个版本的SPREE模块在一个链上向另一个链上的相同模块发送的消息时，消息永远不被过去的版本SPREE收到。因此这些被传送的消息的格式，既不需要向前兼容，也不需要取参考其它标准。  
+&emsp;&emsp;举个例子，从SPREE得到的安全保证，如果A有一个原生A Token，我们希望确保平行链 B不能铸造这个Token。这一点可以通过A在A的状态下为B保留一个账户来达到。但是，当B的账户想要发送一些A Token给第三个平行链 C的时候，B需要通知A。A 的SPREE模块中负责Token的部分，允许Token在不需要核算的情况下进行转移。A的模块只需向B的相同模块发送一个消息，告知将Token发送到某个账户。然后，B可以Token发送给C，C也可以用同样的方式发送Token给A。模块本身将对B链上账户中的Token进行核算，Polkadot的共享安全以及模块的代码将强制执行B永远不能铸造A的Token。XCMP保证信息将被传递，SPREE保证信息将被正确编译执行，这意味着每次传输只需发送一个信息，并且是去需信任的。这一点的应用不仅试用于Token传输，也意味着信任最小化协议的设计会容易得多。  
+&emsp;&emsp;SPREE的部分设计和实现还没有完全设计出来。目前这些归功于reddit用户u/Tawaren提出的SPREE的最初想法。  
+## A.2 SPREE  
+&emsp;&emsp;Polkadot将承载一些用于链接其他区块链的桥接组件。本节将重点讨论与BTC和ETH（1.x）的桥接，因此将主要论述桥接基于POW共识的区块链方式。桥接设计受到XClaim的影响和启发，对于桥接逻辑有两个重要部分：一个是桥接中继，它将尽可能地解析桥接链的共识；另一个是银行，其中涉及拥有桥接链Token的权益参与者。桥接中继需要能够对桥接链进行共识验证，并在桥接链上验证交易包含证明信息。一方面，银行可以被桥接链上的用户用来锁定Token，作为他们想在Polkadot上获得相应资产的抵押，例如，PolkaETH或PolkaBTC；另一方面，用户可以使用银行将这些资产赎回到桥接链的Token。桥式中继的目的是把桥接链的轻客户端逻辑尽可能多的放在桥式中继上，这是一种可行的BTC-Relay方案。然而，平行链上的加密和存储要比ETH智能合约中便宜的多。我们的目标是将桥接链的所有区块头和某些交易的包含证明放在桥接链的区块中。这足以决定一个交易是否在一个可能是最终的链上。比特币和ETH1.0的桥接中继的想法是有一个最长链的桥接链，冲突通过投票/证明方案来解决。  
+## A.3 与其他多链系统的对比  
+### A.3.1 ETH2.0  
+&emsp;&emsp;以太坊2.0承诺将逐步过渡到PoS共识协议，并部署分片来提高速度和吞吐量。Polkadot和以太坊2.0的设计之间有广泛的相似之处，包括类似的区块生成和最终性确定装置。  
+&emsp;&emsp;以太坊2.0中的所有分片都是基于智能合约的同质链运行，而Polkadot中的平行链是独立的异构区块链，其中只有一些链支持不同的智能合约语言。乍一看，这简化了在Ethereum 2.0上的部署，但分片间的交互合约会使以太坊2.0的设计复杂化。我们有一个智能合约语言Ink!，它的存在是为了让智能合约代码可以更容易地被迁移到成为平行链代码。我们认为，平行链这种固有的专注于自己的基础设施应该比智能合约更容易支持更高的性能。  
+&emsp;&emsp;以太坊2.0要求验证者的质押正好是32ETH，而Polkadot固定了一个验证者的目标数量，并试图用NPoS最大化支持质押（见4.1节）。在理论层面上，我们认为32ETH的方法导致验证者比NPoS更不 "独立"，这削弱了整个协议的安全假设。然而，我们承认基尼系数在这里很重要，这使Ethereum 2.0在 "独立性 "方面具有初步优势。我们希望NPoS也能使Dot持有人更多的参与，将余额低于32ETH。  
+&emsp;&emsp;以太坊2.0没有与Polkadot的可用性和有效性协议完全类似的协议（见第4.4.2节）。然而，我们确实从Ethereum提案[4]中得到了使用擦除码的想法，其目的是支持轻量级客户。  
+&emsp;&emsp;以太坊2.0中的验证者被分配到每个分片，用于证明分片的区块，作为Polkadot中的平行链验证者，从而构成分片的委员会。委员会成员从分片的完整节点收到随机选择的代码片段的Merkle证明，并验证它们。如果所有的片段都被验证，并且没有欺诈证明被宣布，那么该区块被认为是有效的。这个方案的安全性是基于在委员会中有一个诚实的多数，而Polkadot的方案的安全性是基于在平行链验证者或辅助检查者中至少有一个诚实的验证者（见4.4.2节）。因此，Ethereum 2.0中的委员会规模与Polkadot中的平行链验证者规模相比要大得多。  
+&emsp;&emsp;以太坊2.0中的信标链与Polkadot的中继链一样，都是股权证明协议。同样，它有一个名为Casper[11][34]的最终性确定装置，如同Polkadot的GRANDPA。Casper也像GRANDPA一样结合了最终确定性和拜占庭协议，但GRANDPA比Casper给出了更好的有效性属性[32]。  
+### A.3.2 Sidechains    
+&emsp;&emsp;区块链扩容技术的另一种方式是侧链技术⁷。侧链解决方案同时也用于互操作性问题的解决，此类方案解决了侧链与主链之间的桥接问题。例如，Eth1.0中引入了许多侧链，这些侧链有助于提高可扩展性，如Plasma Cash和Loom⁸。其中，Cosmos是极具代表性的侧链桥接解决方案，我们将在下节阐述Cosmos9和Polkadot的差异。  
+### A.3.3 Cosmos    
+&emsp;&emsp;Cosmos是一个旨在解决区块链互操作性问题的系统，这对提高去中心化网络的可扩展性至关重要。在这个意义上，这和Polkadot有表层相似之处，因此，Cosmos包含类似Polkadot子组件的功能组件，例如，Cosmos Hub用于Comos各区域之间信息传输，这与Polkadot中继链监督Polkadot各平行链之间的信息传递类似。  
+&emsp;&emsp;然而，这两个系统之间存在着重大差异。最重要的是，虽然Polkadot系统作为一个整体是一个分片的状态机（见第4.2节），而Cosmos的设计不包含对各区状态的整合，因此，各区的状态并不集中反映在Hub的状态中。基于此设计，Cosmos没有在各区之间提供共享的安全性，这是与Polkadot的一大不同之处。这也导致Cosmos的跨链信息不再是无信任的。也就是说，为了对发送方的消息采取行动，接收区需要完全信任发送区。如果我们把Cosmos系统视为一个包含所有区域的整体来进行分析，那么，就像对波卡系统进行分析一样，系统的安全性应该能够保障最不安全的区域，同时，Polkadot的安全承诺保证了经过验证的平行链数据可以在以后的时间里进行检索和审计（见4.4.2节）。然而，Cosmos系统下用户需要相信区域运营商会保留链的历史状态。  
+&emsp;&emsp;值得一提的是，使用SPREE模块，使得Polkadot的安全性比共享安全更高一等。当一个平行链注册了一个SPREE模块，Polkadot保证该平行链收到的部分XCMP消息已经由预定义的SPREE模块的代码集进行了处理。Cosmos系统没有提供类似的跨区信任框架。  
+&emsp;&emsp;Cosmos和Polkadot之间的另一个重要区别在于区块产出和最终完成方式的不同。Polkadot中，由于所有的平行链状态都与中继链状态紧密相连，平行链可以与中继链暂时分叉。这允许区块产出与终态逻辑脱钩。因此，Polkadot的区块可以在未最终完成的区块上生成，并且多个区块可以同时生成终态区块。另一方面，Comos Zone依赖于Hub状态的即时确定性来执行跨链操作，因此，延迟确定会停止跨区域操作。     
+# 词汇表B   
+| 名称 | 描述 | 符号 | 引用 |
+| :------- | :---------------------------------- | :----: | :----: |
+| BABE | 一个随机分配当选验证人的机制，以生产某一区间段的区块 |  | 4.3.1 |
+| BABE Slot | 一个生产中继链区块的时间单位，大约是5秒 | sl | 4.3.1 |
+| Collator | 协助验证者进行区块生产。一组收集人被定义为C | c(C) | 3.1 |
+| Dot | Polkadot原生token |   | 4.5 |
+| Elected validators | 一组获选验证人 | V |   |
+| Epoch | 一个由BABE产生随机性的时间单位，大约4个小时 | e |   |
+| Era | 决定一个新的验证人组合的时间单位，大约1天 |   |   |
+| Extrinsics | 输入数据提供给中继链，用于转换状态 |   | 4.2 |
+| Fishermen | 监视网络的不当行为 |   | 3.1 |
+| Gossiping | 将每个新收到的消息广播给同伴 |   | 4.8.2 |
+| GRANDPA | 敲定区块的机制 |   | 4.3.2 |
+| GRANDPA Round | GRANDPA算法的一种状态，引导区块终态确定 |   | 4.3.2 |
+| Nominator | 质押利益相关方选举提名验证人。一组提名者被定义为N | n(N) | 3.1 |
+| NPoS | Nominated Proof-of-Stake - Polkadot的PoS版本。被提名的验证人被选出来，能够产生区块 |   | 4.1 |
+| Parachain | 异质性独立链 | P |   |
+| PJR | 比例--合理--代表--确保验证人代表尽可能多的提名人的少数群体 |   | 4.1 |
+| PoV | 有效性证明 - 验证者可以在没有完整状态的情况下验证一个区块的机制 |   | 4.4.1 |
+| Relay Chain| 确保平行链间达成全球共识 |   | 4.2 |
+| Runtime | Wasm blob，其中包含状态转换函数功能，以及Polkadot要求的其他核心操作 |   | 4.2 |
+| Sentry nodes | 专门的代理服务器，转发往来于验证人的流量 |   |   |
+| Session | 一个session是一个时间段，有一组恒定的的验证人，验证人只能在session变化时加入或退出验证人集合 |   |   |
+| STVF | 状态-转换-验证-功能--Runtime的一个功能，用于验证PoV |   | 4.4.1 |
+| Validator | 选举产生且作为最高权限方，有机会通过BABE被选中并且生产一个区块，一组候选验证人被定义为C。选举选出的验证人被定义为nval | v(V) | 3.1 |
+| VRF | 可验证随机函数(密码学函数),通过以上过程决定区块产出的获选验证者 |   | 4.3.1 |
+| XCMP | 平行链互相发送消息采用的协议 |   | 4.4.3 |
