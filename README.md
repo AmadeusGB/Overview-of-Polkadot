@@ -5,7 +5,7 @@
 <p align="center">June 1, 2020</p>  
   
 <p align="center">译者：郭斌(波卡高级大使，amadeusgb123@gmail.com)</p>
-<p align="center">路路(波卡高级大使，xx@gmail.com)</p>  
+<p align="center">路路(波卡高级大使，fenglu1025@me.com)</p>  
 <p align="center">Faye Wang(波卡初级大使，fayewang4@gmail.com)</p>  
 
 ## <p align="center">译者序</p>  
