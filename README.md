@@ -24,7 +24,7 @@
 ## <p align="center">Abstract</p>  
 &emsp;&emsp;In this paper we describe the design components of the heterogenous multi-chain protocol Polkadot and explain how these components help Polkadot address some of the existing shortcomings of blockchain technologies. At present, a vast number of blockchain projects have been introduced and employed with various features that are not necessarily designed to work with each other. This makes it difficult for users to utilise a large number of applications on different blockchain projects. Moreover, with the increase in number of projects the security that each one is providing individually becomes weaker. Polkadot aims to provide a scalable and interoperable framework for multiple chains with pooled security that is achieved by thecollection of components described in this paper.  
 
-## <p align="center">目录</p>
+## <p align="center">目  录</p>
 - [1 简介](https://github.com/AmadeusGB/Overview-of-Polkadot/blob/main/book/Introduction.md)
 - [2 概要](https://github.com/AmadeusGB/Overview-of-Polkadot/blob/main/book/Security_model.md)
   - [2.1 安全模型](https://github.com/AmadeusGB/Overview-of-Polkadot/blob/main/book/Security_model.md)
